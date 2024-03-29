@@ -1,26 +1,46 @@
 package me.lando.listeners;
 
+import me.clip.placeholderapi.PlaceholderAPI;
 import me.lando.DatabaseManager;
+import me.lando.datafetcher;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
+import java.util.logging.Logger;
+
 public class PlayerEventsListener implements Listener {
 
 	private final DatabaseManager databaseManager;
+	private final datafetcher plugin;
+	private final Logger logger; // Declare the logger
 
-	public PlayerEventsListener(DatabaseManager databaseManager) {
+	// Modify the constructor to accept Logger
+	public PlayerEventsListener(DatabaseManager databaseManager, datafetcher plugin, Logger logger) {
 		this.databaseManager = databaseManager;
+		this.plugin = plugin;
+		this.logger = logger; // Initialize the logger
 	}
+
 
 	@EventHandler
 	public void onPlayerJoin(PlayerJoinEvent event) {
-		String playerName = event.getPlayer().getName();
-		// The query now uses placeholders for parameters
-		String query = "INSERT INTO PlayerData (username, online) VALUES (?, TRUE) ON DUPLICATE KEY UPDATE online = TRUE;";
-		databaseManager.executeUpdate(query, playerName); // playerName is used as a parameter
+		Player player = event.getPlayer();
+		String playerName = player.getName();
+
+		plugin.getPlaceholders().forEach((column, placeholder) -> {
+			String value = PlaceholderAPI.setPlaceholders(player, placeholder);
+			if (!value.equals(placeholder)) { // Check if PlaceholderAPI replaced the placeholder
+				String query = "UPDATE PlayerData SET " + column + " = ? WHERE username = ?";
+				databaseManager.safeExecuteUpdate(column, query, value, playerName);
+			} else {
+				logger.warning("Placeholder " + placeholder + " could not be resolved for player " + playerName);
+			}
+		});
 	}
+
 
 	@EventHandler
 	public void onPlayerQuit(PlayerQuitEvent event) {

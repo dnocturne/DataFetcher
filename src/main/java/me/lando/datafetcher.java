@@ -6,47 +6,50 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public final class datafetcher extends JavaPlugin {
 
 	// Declare the DatabaseManager as a class variable
 	private DatabaseManager databaseManager;
 
+	// Declare the placeholders map
+	private final Map<String, String> placeholders = new HashMap<>();
+
 	@Override
 	public void onEnable() {
-		// Ensure config.yml exists; if not, create one with default settings.
-		saveDefaultConfig(); // This method creates a config.yml if one doesn't exist, using the one from your resources folder as a template.
-
-		// You can now attempt to establish a connection to the MySQL database using the credentials stored in config.yml
+		saveDefaultConfig();
 		setupDatabaseConnection();
 
-		// Register PlaceholderAPI expansion
 		if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
 			new McNationDataFetcher(this).register();
 		}
 
-		// Register the player events listener
-		getServer().getPluginManager().registerEvents(new PlayerEventsListener(databaseManager), this);
-
-		// Load placeholders from config and update database schema
-		Map<String, String> placeholders = new HashMap<>();
-		if (getConfig().isConfigurationSection("placeholders")) {
-			ConfigurationSection placeholdersSection = getConfig().getConfigurationSection("placeholders");
-			assert placeholdersSection != null;
+		placeholders.clear(); // Clear previous entries
+		Set<String> columnWhitelist = new HashSet<>();
+		ConfigurationSection placeholdersSection = getConfig().getConfigurationSection("placeholders");
+		if (placeholdersSection != null) {
 			for (String key : placeholdersSection.getKeys(false)) {
-				placeholders.put(key, placeholdersSection.getString(key));
+				String placeholder = placeholdersSection.getString(key);
+				placeholders.put(key, placeholder);
+				columnWhitelist.add(key); // Populate the whitelist
 			}
-			databaseManager.ensureColumnsForPlaceholders(placeholders);
 		}
+
+		// Set the whitelist before attempting any database modifications
+		databaseManager.setColumnWhitelist(columnWhitelist);
+		getLogger().info("Column whitelist set.");
+
+		// Now, ensure columns for placeholders
+		databaseManager.ensureColumnsForPlaceholders(placeholders);
+
+		getServer().getPluginManager().registerEvents(new PlayerEventsListener(databaseManager, this, this.getLogger()), this);
 	}
 
-	@Override
-	public void onDisable() {
-		// Close database connection when plugin is disabled
-		if (databaseManager != null) {
-			databaseManager.closeConnection();
-		}
+	public Map<String, String> getPlaceholders() {
+		return placeholders;
 	}
 
 	private void setupDatabaseConnection() {
@@ -58,7 +61,7 @@ public final class datafetcher extends JavaPlugin {
 
 		// Instantiate the DatabaseManager with database connection details
 		assert port != null;
-		databaseManager = new DatabaseManager(host, Integer.parseInt(port), database, username, password, this.getLogger());
+		this.databaseManager = new DatabaseManager(host, Integer.parseInt(port), database, username, password, this.getLogger());
 
 
 		// Attempt to open the database connection
