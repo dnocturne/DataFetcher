@@ -1,0 +1,6 @@
+name: DataFetcher
+version: '${project.version}'
+main: me.lando.datafetcher
+api-version: '1.20'
+author: landocalrissan
+load: STARTUP

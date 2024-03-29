@@ -1,0 +1,8 @@
+mysql:
+  host: "localhost" # Replace with your MySQL host
+  port: 3306 # Replace with your MySQL port
+  database: "minecraft_plugin_db" # Replace with your database name
+  username: "user" # Replace with your database username
+  password: "pass" # Replace with your database password
+placeholders:
+  mobkills: "%statistic_mob_kills%"
