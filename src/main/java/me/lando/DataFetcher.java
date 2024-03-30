@@ -73,4 +73,25 @@ public final class DataFetcher extends JavaPlugin {
 			getLogger().severe("Could not connect to the database.");
 		}
 	}
+
+	public void reloadPluginSettings() {
+		reloadConfig(); // Reloads the config.yml
+		placeholders.clear(); // Clears the existing placeholders
+		Set<String> columnWhitelist = new HashSet<>();
+		ConfigurationSection placeholdersSection = getConfig().getConfigurationSection("placeholders");
+		if (placeholdersSection != null) {
+			for (String key : placeholdersSection.getKeys(false)) {
+				String placeholder = placeholdersSection.getString(key);
+				placeholders.put(key, placeholder);
+				columnWhitelist.add(key); // Repopulate the whitelist with new entries
+			}
+		}
+
+		databaseManager.setColumnWhitelist(columnWhitelist);
+		getLogger().info("Column whitelist updated.");
+
+		// Now, update columns for new placeholders
+		databaseManager.ensureColumnsForPlaceholders(placeholders);
+		getLogger().info("Database structure updated based on new placeholders.");
+	}
 }

@@ -23,7 +23,7 @@ public class DataFetcherCommand implements CommandExecutor, TabCompleter {
 	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
 		if (args.length > 0 && args[0].equalsIgnoreCase("reload")) {
 			if (sender.hasPermission("datafetcher.reload")) {
-				plugin.reloadConfig();
+				plugin.reloadPluginSettings(); // Use the new reload method
 				String reloadMessage = plugin.getConfig().getString("messages.configurationReloaded", "<green>Configuration reloaded.");
 				sender.sendMessage(MiniMessage.miniMessage().deserialize(reloadMessage));
 			} else {
