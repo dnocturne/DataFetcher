@@ -1,16 +1,14 @@
 package me.lando;
 
+import me.lando.commands.DataFetcherCommand;
 import me.lando.listeners.PlayerEventsListener;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-public final class datafetcher extends JavaPlugin {
+public final class DataFetcher extends JavaPlugin {
 
 	// Declare the DatabaseManager as a class variable
 	private DatabaseManager databaseManager;
@@ -46,6 +44,10 @@ public final class datafetcher extends JavaPlugin {
 		databaseManager.ensureColumnsForPlaceholders(placeholders);
 
 		getServer().getPluginManager().registerEvents(new PlayerEventsListener(databaseManager, this, this.getLogger()), this);
+
+		Objects.requireNonNull(this.getCommand("datafetcher")).setExecutor(new DataFetcherCommand(this));
+		// Ensure you also register TabCompleter
+		Objects.requireNonNull(this.getCommand("datafetcher")).setTabCompleter(new DataFetcherCommand(this));
 	}
 
 	public Map<String, String> getPlaceholders() {

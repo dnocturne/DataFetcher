@@ -6,3 +6,7 @@ mysql:
   password: "pass" # Replace with your database password
 placeholders:
   mobkills: "%statistic_mob_kills%"
+messages:
+  configurationReloaded: "<green>Configuration reloaded."
+  noPermissions: "<red>You do not have permission to execute this command."
+  usage: "<red>Usage: /datafetcher reload"

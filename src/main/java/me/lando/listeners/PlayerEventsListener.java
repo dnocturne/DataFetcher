@@ -1,8 +1,8 @@
 package me.lando.listeners;
 
 import me.clip.placeholderapi.PlaceholderAPI;
+import me.lando.DataFetcher;
 import me.lando.DatabaseManager;
-import me.lando.datafetcher;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -14,11 +14,11 @@ import java.util.logging.Logger;
 public class PlayerEventsListener implements Listener {
 
 	private final DatabaseManager databaseManager;
-	private final datafetcher plugin;
+	private final DataFetcher plugin;
 	private final Logger logger; // Declare the logger
 
 	// Modify the constructor to accept Logger
-	public PlayerEventsListener(DatabaseManager databaseManager, datafetcher plugin, Logger logger) {
+	public PlayerEventsListener(DatabaseManager databaseManager, DataFetcher plugin, Logger logger) {
 		this.databaseManager = databaseManager;
 		this.plugin = plugin;
 		this.logger = logger; // Initialize the logger

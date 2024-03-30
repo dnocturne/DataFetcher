@@ -6,9 +6,9 @@ import org.jetbrains.annotations.NotNull;
 
 public class McNationDataFetcher extends PlaceholderExpansion {
 
-	private final datafetcher plugin;
+	private final DataFetcher plugin;
 
-	public McNationDataFetcher(datafetcher plugin) {
+	public McNationDataFetcher(DataFetcher plugin) {
 		this.plugin = plugin;
 	}
 

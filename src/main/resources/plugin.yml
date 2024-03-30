@@ -1,6 +1,14 @@
 name: DataFetcher
 version: '${project.version}'
-main: me.lando.datafetcher
+main: me.lando.DataFetcher
 api-version: '1.20'
 author: landocalrissan
 load: STARTUP
+commands:
+  datafetcher:
+    description: Reloads the plugin configuration
+    usage: /datafetcher reload
+permissions:
+  datafetcher.reload:
+    description: Allows the user to reload the DataFetcher configuration
+    default: op
