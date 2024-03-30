@@ -30,13 +30,20 @@ public class PlayerEventsListener implements Listener {
 		Player player = event.getPlayer();
 		String playerName = player.getName();
 
+		// Update the online status to TRUE when a player joins
+		String queryOnline = "UPDATE PlayerData SET online = TRUE WHERE username = ?";
+		databaseManager.executeUpdate(queryOnline, playerName);
+
+		// Handle other dynamic placeholders
 		plugin.getPlaceholders().forEach((column, placeholder) -> {
-			String value = PlaceholderAPI.setPlaceholders(player, placeholder);
-			if (!value.equals(placeholder)) { // Check if PlaceholderAPI replaced the placeholder
-				String query = "UPDATE PlayerData SET " + column + " = ? WHERE username = ?";
-				databaseManager.safeExecuteUpdate(column, query, value, playerName);
-			} else {
-				logger.warning("Placeholder " + placeholder + " could not be resolved for player " + playerName);
+			if (!"online".equals(column)) { // Skip the 'online' column for dynamic placeholder handling
+				String value = PlaceholderAPI.setPlaceholders(player, placeholder);
+				if (!value.equals(placeholder)) { // Check if PlaceholderAPI replaced the placeholder
+					String query = "UPDATE PlayerData SET " + column + " = ? WHERE username = ?";
+					databaseManager.safeExecuteUpdate(column, query, value, playerName);
+				} else {
+					logger.warning("Placeholder " + placeholder + " could not be resolved for player " + playerName);
+				}
 			}
 		});
 	}
