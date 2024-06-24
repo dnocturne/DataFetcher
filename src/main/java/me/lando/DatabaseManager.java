@@ -111,6 +111,41 @@ public class DatabaseManager {
 		}
 	}
 
+	public void ensureTableExists() {
+		try {
+			if (!tableExists()) {
+				createPlayerDataTable();
+			}
+		} catch (SQLException e) {
+			logger.severe("SQL Exception while ensuring the table exists: " + e.getMessage());
+		}
+	}
+
+	private boolean tableExists() throws SQLException {
+		DatabaseMetaData dbm = connection.getMetaData();
+		try (ResultSet tables = dbm.getTables(null, null, "PlayerData", null)) {
+			return tables.next();
+		}
+	}
+
+	private void createPlayerDataTable() throws SQLException {
+		String createTableSql = "CREATE TABLE IF NOT EXISTS PlayerData (" +
+				"id INT AUTO_INCREMENT PRIMARY KEY, " +
+				"username VARCHAR(255) NOT NULL UNIQUE, " +
+				"online BOOLEAN NOT NULL DEFAULT FALSE);"; // Add the 'online' column
+		executeUpdate(createTableSql);
+	}
+
+	// Add this method to DatabaseManager.java
+	public boolean playerExists(String query, String username) throws SQLException {
+		try (PreparedStatement ps = connection.prepareStatement(query)) {
+			ps.setString(1, username);
+			try (ResultSet rs = ps.executeQuery()) {
+				return rs.next();
+			}
+		}
+	}
+
 	private boolean columnExists(String columnName) throws SQLException {
 		ResultSet rs = connection.getMetaData().getColumns(null, null, "PlayerData", columnName);
 		boolean exists = rs.next();

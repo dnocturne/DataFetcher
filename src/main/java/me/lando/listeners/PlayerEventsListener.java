@@ -15,20 +15,24 @@ public class PlayerEventsListener implements Listener {
 
 	private final DatabaseManager databaseManager;
 	private final DataFetcher plugin;
-	private final Logger logger; // Declare the logger
+	private final Logger logger;
 
-	// Modify the constructor to accept Logger
 	public PlayerEventsListener(DatabaseManager databaseManager, DataFetcher plugin, Logger logger) {
 		this.databaseManager = databaseManager;
 		this.plugin = plugin;
-		this.logger = logger; // Initialize the logger
+		this.logger = logger;
 	}
-
 
 	@EventHandler
 	public void onPlayerJoin(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
 		String playerName = player.getName();
+
+		// Insert player into PlayerData table if not exists
+		if (!playerExists(playerName)) {
+			String insertQuery = "INSERT INTO PlayerData (username) VALUES (?);";
+			databaseManager.executeUpdate(insertQuery, playerName);
+		}
 
 		// Update the online status to TRUE when a player joins
 		String queryOnline = "UPDATE PlayerData SET online = TRUE WHERE username = ?";
@@ -48,11 +52,21 @@ public class PlayerEventsListener implements Listener {
 		});
 	}
 
-
 	@EventHandler
 	public void onPlayerQuit(PlayerQuitEvent event) {
 		String playerName = event.getPlayer().getName();
-		String query = "UPDATE PlayerData SET online = FALSE WHERE username = ?;";
-		databaseManager.executeUpdate(query, playerName); // Similarly, using playerName as a parameter
+		// Update the online status to FALSE when a player leaves
+		String query = "UPDATE PlayerData SET online = FALSE WHERE username = ?";
+		databaseManager.executeUpdate(query, playerName);
+	}
+
+	private boolean playerExists(String username) {
+		String query = "SELECT id FROM PlayerData WHERE username = ?";
+		try {
+			return databaseManager.playerExists(query, username);
+		} catch (Exception e) {
+			logger.severe("Could not check if player exists: " + e.getMessage());
+			return false;
+		}
 	}
 }

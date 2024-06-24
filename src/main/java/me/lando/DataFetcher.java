@@ -21,6 +21,12 @@ public final class DataFetcher extends JavaPlugin {
 		saveDefaultConfig();
 		setupDatabaseConnection();
 
+		// Ensure the table 'PlayerData' exists
+		databaseManager.ensureTableExists();
+
+		// Now, ensure columns for placeholders
+		databaseManager.ensureColumnsForPlaceholders(placeholders);
+
 		if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
 			new McNationDataFetcher(this).register();
 		}
@@ -35,6 +41,7 @@ public final class DataFetcher extends JavaPlugin {
 				columnWhitelist.add(key); // Populate the whitelist
 			}
 		}
+		columnWhitelist.add("online"); // Ensure 'online' is in the whitelist
 
 		// Set the whitelist before attempting any database modifications
 		databaseManager.setColumnWhitelist(columnWhitelist);
