@@ -1,5 +1,8 @@
 package me.lando;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
 import java.sql.*;
 import java.util.Map;
 import java.util.Set;
@@ -7,56 +10,42 @@ import java.util.logging.Logger;
 
 public class DatabaseManager {
 
-	private static Connection connection;
-	private final String host, database, username, password;
-	private final int port;
+	private final HikariDataSource dataSource;
 	private final Logger logger;
 
 	// Whitelist for valid column names
 	private Set<String> columnWhitelist;
 
 	public DatabaseManager(String host, int port, String database, String username, String password, Logger logger) {
-		this.host = host;
-		this.port = port;
-		this.database = database;
-		this.username = username;
-		this.password = password;
 		this.logger = logger;
-		logger.info("DatabaseManager instance created.");
+
+		// Configure HikariCP
+		HikariConfig config = new HikariConfig();
+		config.setJdbcUrl("jdbc:mysql://" + host + ":" + port + "/" + database + "?useSSL=false");
+		config.setUsername(username);
+		config.setPassword(password);
+
+		// Optional: configure additional HikariCP settings here
+
+		// Initialize HikariCP data source
+		this.dataSource = new HikariDataSource(config);
+
+		logger.info("DatabaseManager instance created with HikariCP.");
 	}
 
-	public boolean openConnection() {
-		try {
-			if (connection != null && !connection.isClosed()) {
-				return true;
-			}
-			synchronized (this) {
-				if (connection != null && !connection.isClosed()) {
-					return true;
-				}
-				Class.forName("com.mysql.cj.jdbc.Driver");
-				connection = DriverManager.getConnection("jdbc:mysql://" + this.host + ":" + this.port + "/" + this.database + "?useSSL=false", this.username, this.password);
-			}
-			logger.info("Successfully connected to the database.");
-			return true;
-		} catch (SQLException | ClassNotFoundException e) {
-			logger.severe("SQL Exception: " + e.getMessage());
-			return false;
-		}
+	public Connection getConnection() throws SQLException {
+		return dataSource.getConnection();
 	}
 
-	public void closeConnection() {
-		try {
-			if (connection != null && !connection.isClosed()) {
-				connection.close();
-			}
-		} catch (SQLException e) {
-			logger.severe("SQL Exception: " + e.getMessage());
+	public void closePool() {
+		if (dataSource != null && !dataSource.isClosed()) {
+			dataSource.close();
 		}
 	}
 
 	public void executeUpdate(String query, Object... params) {
-		try (PreparedStatement ps = connection.prepareStatement(query)) {
+		try (Connection conn = getConnection();
+			 PreparedStatement ps = conn.prepareStatement(query)) {
 			for (int i = 0; i < params.length; i++) {
 				ps.setObject(i + 1, params[i]);
 			}
@@ -66,13 +55,17 @@ public class DatabaseManager {
 		}
 	}
 
-	// Add to your DatabaseManager.java
+	// ... rest of your existing methods ...
+
+	// Update methods below to use getConnection()
+
 	public void safeExecuteUpdate(String columnName, String query, Object... params) {
 		if (!isValidColumn(columnName)) {
 			logger.warning("Attempted to use an invalid column name: " + columnName);
 			return;
 		}
-		try (PreparedStatement ps = connection.prepareStatement(query)) {
+		try (Connection conn = getConnection();
+			 PreparedStatement ps = conn.prepareStatement(query)) {
 			for (int i = 0; i < params.length; i++) {
 				ps.setObject(i + 1, params[i]); // PrepareStatement parameters are 1-based.
 			}
@@ -100,7 +93,6 @@ public class DatabaseManager {
 				continue;
 			}
 			try {
-				// This method needs implementation to check column existence before attempting to add
 				if (!columnExists(column)) {
 					String alterTableSql = "ALTER TABLE PlayerData ADD COLUMN " + column + " VARCHAR(255);";
 					executeUpdate(alterTableSql);
@@ -122,8 +114,8 @@ public class DatabaseManager {
 	}
 
 	private boolean tableExists() throws SQLException {
-		DatabaseMetaData dbm = connection.getMetaData();
-		try (ResultSet tables = dbm.getTables(null, null, "PlayerData", null)) {
+		try (Connection conn = getConnection();
+			 ResultSet tables = conn.getMetaData().getTables(null, null, "PlayerData", null)) {
 			return tables.next();
 		}
 	}
@@ -132,13 +124,13 @@ public class DatabaseManager {
 		String createTableSql = "CREATE TABLE IF NOT EXISTS PlayerData (" +
 				"id INT AUTO_INCREMENT PRIMARY KEY, " +
 				"username VARCHAR(255) NOT NULL UNIQUE, " +
-				"online BOOLEAN NOT NULL DEFAULT FALSE);"; // Add the 'online' column
+				"online BOOLEAN NOT NULL DEFAULT FALSE);";
 		executeUpdate(createTableSql);
 	}
 
-	// Add this method to DatabaseManager.java
 	public boolean playerExists(String query, String username) throws SQLException {
-		try (PreparedStatement ps = connection.prepareStatement(query)) {
+		try (Connection conn = getConnection();
+			 PreparedStatement ps = conn.prepareStatement(query)) {
 			ps.setString(1, username);
 			try (ResultSet rs = ps.executeQuery()) {
 				return rs.next();
@@ -147,9 +139,11 @@ public class DatabaseManager {
 	}
 
 	private boolean columnExists(String columnName) throws SQLException {
-		ResultSet rs = connection.getMetaData().getColumns(null, null, "PlayerData", columnName);
-		boolean exists = rs.next();
-		rs.close();
-		return exists;
+		try (Connection conn = getConnection();
+			 ResultSet rs = conn.getMetaData().getColumns(null, null, "PlayerData", columnName)) {
+			boolean exists = rs.next();
+			rs.close();
+			return exists;
+		}
 	}
 }

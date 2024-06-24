@@ -72,13 +72,8 @@ public final class DataFetcher extends JavaPlugin {
 		assert port != null;
 		this.databaseManager = new DatabaseManager(host, Integer.parseInt(port), database, username, password, this.getLogger());
 
-
-		// Attempt to open the database connection
-		if (databaseManager.openConnection()) {
-			getLogger().info("Successfully connected to the database.");
-		} else {
-			getLogger().severe("Could not connect to the database.");
-		}
+		// No need to manually open the connection, HikariCP will handle this
+		getLogger().info("DatabaseManager has been instantiated with HikariCP.");
 	}
 
 	public void reloadPluginSettings() {
