@@ -14,7 +14,7 @@ public class McNationDataFetcher extends PlaceholderExpansion {
 
 	@Override
 	public boolean persist() {
-		return true; // This makes sure the expansion doesn't unregister on reload.
+		return true;
 	}
 
 	@Override
@@ -24,7 +24,7 @@ public class McNationDataFetcher extends PlaceholderExpansion {
 
 	@Override
 	public @NotNull String getAuthor() {
-		return plugin.getPluginMeta().getAuthors().toString();
+		return plugin.getDescription().getAuthors().toString();
 	}
 
 	@Override
@@ -34,14 +34,23 @@ public class McNationDataFetcher extends PlaceholderExpansion {
 
 	@Override
 	public @NotNull String getVersion() {
-		return plugin.getPluginMeta().getVersion();
+		return plugin.getDescription().getVersion();
 	}
 
 	@Override
 	public String onPlaceholderRequest(Player player, @NotNull String identifier) {
+		if (player == null) {
+			return "";
+		}
+
 		if ("online".equalsIgnoreCase(identifier)) {
 			return player.isOnline() ? "1" : "0";
 		}
-		return null; // If the placeholder is unknown
+
+		if ("operator".equalsIgnoreCase(identifier)) {
+			return player.isOp() ? "1" : "0";
+		}
+
+		return null;
 	}
 }

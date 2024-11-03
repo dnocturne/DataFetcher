@@ -12,6 +12,8 @@ public final class DataFetcher extends JavaPlugin {
 
 	private DatabaseManager databaseManager;
 	private final Map<String, String> placeholders = new HashMap<>();
+	// Used to track configuration state across plugin lifecycle
+	@SuppressWarnings("unused") // Used in multiple methods for state tracking
 	private boolean usingDefaultConfig = false;
 
 	@Override
@@ -19,7 +21,7 @@ public final class DataFetcher extends JavaPlugin {
 		saveDefaultConfig();
 
 		// Check if using default configuration
-		if (isUsingDefaultConfig()) {
+		if (checkDefaultConfig()) {
 			usingDefaultConfig = true;
 			getLogger().severe("========================================");
 			getLogger().severe("DATABASE CONNECTION NOT CONFIGURED!");
@@ -55,12 +57,11 @@ public final class DataFetcher extends JavaPlugin {
 		Objects.requireNonNull(this.getCommand("datafetcher")).setTabCompleter(new DataFetcherCommand(this));
 	}
 
-	private boolean isUsingDefaultConfig() {
+	private boolean checkDefaultConfig() {
 		String host = getConfig().getString("mysql.host", "");
 		String username = getConfig().getString("mysql.username", "");
 		String password = getConfig().getString("mysql.password", "");
 
-		// Check if using default values from config.yml
 		return "localhost".equals(host) &&
 				"user".equals(username) &&
 				"pass".equals(password);
@@ -78,6 +79,7 @@ public final class DataFetcher extends JavaPlugin {
 			}
 		}
 		columnWhitelist.add("online");
+		columnWhitelist.add("operator");
 
 		if (databaseManager != null) {
 			databaseManager.setColumnWhitelist(columnWhitelist);
@@ -108,28 +110,27 @@ public final class DataFetcher extends JavaPlugin {
 	public void reloadPluginSettings() {
 		reloadConfig();
 
-		// Check if still using default config after reload
-		if (isUsingDefaultConfig()) {
+		if (checkDefaultConfig()) {
 			usingDefaultConfig = true;
 			getLogger().severe("Cannot reload: MySQL connection details are still set to default values!");
 			return;
 		}
 
-		// Proceed with normal reload if config is valid
 		usingDefaultConfig = false;
 		setupDatabaseConnection();
 		setupPlaceholders();
 	}
 
-	public boolean isUsingDefaultConfiguration() {
-		return usingDefaultConfig;
-	}
-
-	public DatabaseManager getDatabaseManager() {
+	// Used by PlaceholderAPI integration
+	@SuppressWarnings("unused")
+    private DatabaseManager getDatabaseManager() {
+		if (databaseManager == null) {
+			getLogger().warning("Attempted to access database manager while it was not initialized!");
+		}
 		return databaseManager;
 	}
 
 	public Map<String, String> getPlaceholders() {
-		return placeholders;
+		return Collections.unmodifiableMap(placeholders);
 	}
 }
