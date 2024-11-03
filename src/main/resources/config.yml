@@ -1,12 +1,19 @@
+# Database Configuration
+# WARNING: You must change these default values before the plugin will connect to your database!
 mysql:
-  host: "localhost" # Replace with your MySQL host
-  port: 3306 # Replace with your MySQL port
-  database: "minecraft_plugin_db" # Replace with your database name
-  username: "user" # Replace with your database username
-  password: "pass" # Replace with your database password
+  host: "localhost" # Default value - CHANGE THIS
+  port: 3306
+  database: "minecraft_plugin_db" # Default value - CHANGE THIS
+  username: "user" # Default value - CHANGE THIS
+  password: "pass" # Default value - CHANGE THIS
+
+# PlaceholderAPI placeholders configuration
 placeholders:
   mobkills: "%statistic_mob_kills%"
+
+# Messages
 messages:
   configurationReloaded: "<green>Configuration reloaded."
   noPermissions: "<red>You do not have permission to execute this command."
   usage: "<red>Usage: /datafetcher reload"
+  databaseNotConfigured: "<red>Database connection is not configured. Please update the MySQL settings in config.yml"

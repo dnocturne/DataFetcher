@@ -1,4 +1,4 @@
-package me.lando;
+package me.dnoc;
 
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.entity.Player;
@@ -24,24 +24,23 @@ public class McNationDataFetcher extends PlaceholderExpansion {
 
 	@Override
 	public @NotNull String getAuthor() {
-		return plugin.getDescription().getAuthors().toString();
+		return plugin.getPluginMeta().getAuthors().toString();
 	}
 
 	@Override
 	public @NotNull String getIdentifier() {
-		return "datafetcher"; // This will be your placeholder identifier.
+		return "datafetcher";
 	}
 
 	@Override
 	public @NotNull String getVersion() {
-		return plugin.getDescription().getVersion();
+		return plugin.getPluginMeta().getVersion();
 	}
 
 	@Override
 	public String onPlaceholderRequest(Player player, @NotNull String identifier) {
-		// Here you respond to placeholder requests. For example:
 		if ("online".equalsIgnoreCase(identifier)) {
-			return player.isOnline() ? "1" : "0"; // Just an example, you'd fetch actual data related to the player here.
+			return player.isOnline() ? "1" : "0";
 		}
 		return null; // If the placeholder is unknown
 	}

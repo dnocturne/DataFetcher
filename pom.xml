@@ -12,19 +12,25 @@
     <name>DataFetcher</name>
 
     <properties>
-        <java.version>1.8</java.version>
+        <java.version>15</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
+                    <source>15</source>
+                    <target>15</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -43,7 +49,7 @@
                                 <relocation>
                                     <!-- Relocate HikariCP to avoid conflicts with other plugins -->
                                     <pattern>com.zaxxer.hikari</pattern>
-                                    <shadedPattern>me.lando.hikari</shadedPattern>
+                                    <shadedPattern>me.dnoc.hikari</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>

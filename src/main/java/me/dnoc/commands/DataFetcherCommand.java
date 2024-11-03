@@ -1,6 +1,6 @@
-package me.lando.commands;
+package me.dnoc.commands;
 
-import me.lando.DataFetcher;
+import me.dnoc.DataFetcher;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
