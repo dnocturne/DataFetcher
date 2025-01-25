@@ -12,3 +12,5 @@ permissions:
   datafetcher.reload:
     description: Allows the user to reload the DataFetcher configuration
     default: op
+depend: [PlaceholderAPI]
+softdepend: [Essentials]

@@ -72,6 +72,11 @@
             <id>placeholderapi</id>
             <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
         </repository>
+        <repository>
+            <id>essentialsx-releases</id>
+            <name>EssentialsX API Repository</name>
+            <url>https://repo.essentialsx.net/snapshots</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -111,6 +116,12 @@
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
             <version>5.0.0</version> <!-- Use the latest version -->
+        </dependency>
+        <!-- EssentialsX -->
+        <dependency>
+            <groupId>net.essentialsx</groupId>
+            <artifactId>EssentialsX</artifactId>
+            <version>2.21.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 </project>
