@@ -1,12 +1,15 @@
 package me.dnoc;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 public class DatabaseManager implements AutoCloseable {
 
@@ -18,32 +21,11 @@ public class DatabaseManager implements AutoCloseable {
     private static final int MAX_LIFETIME = 1800000; // 30 minutes
     private static final int CONNECTION_TIMEOUT = 5000; // 5 seconds
 
-    public DatabaseManager(String host, int port, String database, String username, String password) {
-        // Configure HikariCP with optimized settings
-        HikariConfig config = new HikariConfig();
-        config.setJdbcUrl("jdbc:mysql://" + host + ":" + port + "/" + database
-                + "?useSSL=false&serverTimezone=UTC&characterEncoding=utf8&autoReconnect=true");
-        config.setUsername(username);
-        config.setPassword(password);
-
-        // Connection pool settings
+    public DatabaseManager(HikariConfig config) {
         config.setMaximumPoolSize(MAX_POOL_SIZE);
         config.setMinimumIdle(MIN_IDLE);
         config.setMaxLifetime(MAX_LIFETIME);
         config.setConnectionTimeout(CONNECTION_TIMEOUT);
-        config.setPoolName("DataFetcher-Pool");
-
-        // Performance settings
-        config.addDataSourceProperty("cachePrepStmts", "true");
-        config.addDataSourceProperty("prepStmtCacheSize", "250");
-        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
-        config.addDataSourceProperty("useServerPrepStmts", "true");
-
-        // Additional connection properties for stability
-        config.addDataSourceProperty("useUnicode", "true");
-        config.addDataSourceProperty("allowPublicKeyRetrieval", "true");
-        config.addDataSourceProperty("createDatabaseIfNotExist", "true");
-
         this.dataSource = new HikariDataSource(config);
         LOGGER.info("DatabaseManager initialized with optimized connection pool settings.");
     }
@@ -65,7 +47,10 @@ public class DatabaseManager implements AutoCloseable {
         }
     }
 
-    public void executeUpdate(String query, Object... params) throws SQLException {
+    void executeUpdate(String query, Object... params) throws SQLException {
+        if (!isValidSQLQuery(query)) {
+            throw new SQLException("Potentially dangerous query detected");
+        }
         try (Connection connection = getConnection(); PreparedStatement ps = connection.prepareStatement(query)) {
             for (int i = 0; i < params.length; i++) {
                 ps.setObject(i + 1, params[i]);
@@ -75,6 +60,10 @@ public class DatabaseManager implements AutoCloseable {
             LOGGER.severe(String.format("Failed to execute update query: %s", e.getMessage()));
             throw e;
         }
+    }
+
+    private boolean isValidSQLQuery(String query) {
+        return query.matches("^[A-Za-z0-9_ =?,.'\"()%\\-]+$");
     }
 
     public void setColumnWhitelist(Set<String> columnWhitelist) {

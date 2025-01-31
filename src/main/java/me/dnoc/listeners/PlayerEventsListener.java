@@ -1,19 +1,21 @@
 package me.dnoc.listeners;
 
-import me.clip.placeholderapi.PlaceholderAPI;
-import me.dnoc.DataFetcher;
-import me.dnoc.DatabaseManager;
+import java.sql.SQLException;
+import java.util.Map;
+import java.util.logging.Logger;
+
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+
 import com.earth2me.essentials.Essentials;
 
-import java.sql.SQLException;
-import java.util.Map;
-import java.util.logging.Logger;
+import me.clip.placeholderapi.PlaceholderAPI;
+import me.dnoc.DataFetcher;
+import me.dnoc.DatabaseManager;
 
 public class PlayerEventsListener implements Listener {
 
@@ -43,11 +45,11 @@ public class PlayerEventsListener implements Listener {
             // Insert player into PlayerData table if not exists
             if (!databaseManager.checkPlayerExists(playerName)) {
                 String insertQuery = "INSERT INTO PlayerData (username, operator, online) VALUES (?, ?, ?);";
-                databaseManager.executeUpdate(insertQuery, playerName, isOp, !isVanished);
+                plugin.executeUpdate(insertQuery, playerName, isOp, !isVanished);
             } else {
                 // Update the online status based on vanish state
                 String queryOnline = "UPDATE PlayerData SET online = ?, operator = ? WHERE username = ?";
-                databaseManager.executeUpdate(queryOnline, !isVanished, isOp, playerName);
+                plugin.executeUpdate(queryOnline, !isVanished, isOp, playerName);
             }
 
             // Handle other dynamic placeholders
@@ -61,7 +63,7 @@ public class PlayerEventsListener implements Listener {
                         String value = PlaceholderAPI.setPlaceholders(player, placeholder);
                         if (!placeholder.equals(value)) {
                             String query = "UPDATE PlayerData SET " + column + " = ? WHERE username = ?";
-                            databaseManager.executeUpdate(query, value, playerName);
+                            plugin.executeUpdate(query, value, playerName);
                         } else {
                             LOGGER.warning(String.format("Placeholder %s could not be resolved for player %s", placeholder, playerName));
                         }
@@ -93,7 +95,7 @@ public class PlayerEventsListener implements Listener {
                         String value = PlaceholderAPI.setPlaceholders(player, placeholder);
                         if (!placeholder.equals(value)) {
                             String query = "UPDATE PlayerData SET " + column + " = ? WHERE username = ?";
-                            databaseManager.executeUpdate(query, value, playerName);
+                            plugin.executeUpdate(query, value, playerName);
                         }
                     }
                 }
@@ -101,7 +103,7 @@ public class PlayerEventsListener implements Listener {
 
             // Update the online status and operator status when a player leaves
             String query = "UPDATE PlayerData SET online = FALSE, operator = ? WHERE username = ?";
-            databaseManager.executeUpdate(query, isOp, playerName);
+            plugin.executeUpdate(query, isOp, playerName);
 
             LOGGER.info(String.format("Player %s disconnected. Data updated successfully. Final operator status: %s", playerName, isOp));
         } catch (SQLException e) {

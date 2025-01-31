@@ -1,13 +1,23 @@
 package me.dnoc;
 
-import me.dnoc.commands.DataFetcherCommand;
-import me.dnoc.listeners.PlayerEventsListener;
-import me.dnoc.listeners.VanishListener;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.atomic.LongAdder;
+
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.*;
+import com.zaxxer.hikari.HikariConfig;
+
+import me.dnoc.commands.DataFetcherCommand;
+import me.dnoc.listeners.PlayerEventsListener;
+import me.dnoc.listeners.VanishListener;
 
 public final class DataFetcher extends JavaPlugin {
 
@@ -16,19 +26,16 @@ public final class DataFetcher extends JavaPlugin {
     // Used to track configuration state across plugin lifecycle
     @SuppressWarnings("unused") // Used in multiple methods for state tracking
     private boolean usingDefaultConfig = false;
+    private final Metrics metrics = new Metrics();
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
 
-        // Check if using default configuration
-        if (checkDefaultConfig()) {
+        // Add validation check before proceeding
+        if (checkDefaultConfig() || !validateDatabaseConfig()) {
             usingDefaultConfig = true;
-            getLogger().severe("========================================");
-            getLogger().severe("DATABASE CONNECTION NOT CONFIGURED!");
-            getLogger().severe("Please update the MySQL connection details in config.yml");
-            getLogger().severe("The plugin will not connect to the database until the default values are changed");
-            getLogger().severe("========================================");
+            getLogger().severe("Invalid database configuration");
             return;
         }
 
@@ -55,7 +62,7 @@ public final class DataFetcher extends JavaPlugin {
 
             if (Bukkit.getPluginManager().getPlugin("Essentials") != null) {
                 getServer().getPluginManager().registerEvents(
-                        new VanishListener(databaseManager),
+                        new VanishListener(this),
                         this
                 );
                 getLogger().info("EssentialsX vanish support enabled!");
@@ -74,6 +81,25 @@ public final class DataFetcher extends JavaPlugin {
         return "localhost".equals(host)
                 && "user".equals(username)
                 && "pass".equals(password);
+    }
+
+    private boolean validateDatabaseConfig() {
+        ConfigurationSection mysql = getConfig().getConfigurationSection("mysql");
+        if (mysql == null) {
+            return false;
+        }
+
+        String port = mysql.getString("port");
+        try {
+            assert port != null;
+            int portNum = Integer.parseInt(port);
+            if (portNum < 1 || portNum > 65535) {
+                return false;
+            }
+        } catch (NumberFormatException e) {
+            return false;
+        }
+        return !checkDefaultConfig();
     }
 
     private void setupPlaceholders() {
@@ -105,7 +131,14 @@ public final class DataFetcher extends JavaPlugin {
             String password = getConfig().getString("mysql.password");
 
             assert port != null;
-            this.databaseManager = new DatabaseManager(host, Integer.parseInt(port), database, username, password);
+            HikariConfig config = new HikariConfig();
+            config.setJdbcUrl("jdbc:mysql://" + host + ":" + port + "/" + database);
+            config.setUsername(username);
+            config.setPassword(password);
+            config.setInitializationFailTimeout(30000); // 30s initialization window
+            config.setConnectionTimeout(30000); // More generous timeout
+
+            this.databaseManager = new DatabaseManager(config);
             getLogger().info("Successfully connected to the database.");
         } catch (RuntimeException e) {
             getLogger().severe(String.format("Failed to establish database connection: %s", e.getMessage()));
@@ -138,5 +171,30 @@ public final class DataFetcher extends JavaPlugin {
 
     public Map<String, String> getPlaceholders() {
         return Collections.unmodifiableMap(placeholders);
+    }
+
+    // Add metrics collection
+    public static class Metrics {
+
+        private final LongAdder queryCounter = new LongAdder();
+        private final LongAdder errorCounter = new LongAdder();
+
+        public void incrementQueries() {
+            queryCounter.increment();
+        }
+
+        public void incrementErrors() {
+            errorCounter.increment();
+        }
+    }
+
+    public void executeUpdate(String query, Object... params) throws SQLException {
+        try {
+            metrics.incrementQueries();
+            databaseManager.executeUpdate(query, params);
+        } catch (SQLException e) {
+            metrics.incrementErrors();
+            throw e;
+        }
     }
 }
